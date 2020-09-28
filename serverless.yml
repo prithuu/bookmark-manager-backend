@@ -1,0 +1,109 @@
+service: bmManager
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+functions:
+  createUser:
+    handler: user/create-user.create
+    events:
+      - http:
+          path: user
+          method: post
+          cors: true
+
+  getUser:
+    handler: user/get-user.get
+    events:
+      - http:
+          path: user
+          method: get
+          cors: true
+
+  createFolder:
+    handler: folder/create-folder.create
+    events:
+      - http:
+          path: folder
+          method: post
+          cors: true
+
+  deleteFolder:
+    handler: folder/delete-folder.delete
+    events:
+      - http:
+          path: folder/{id}
+          method: delete
+          cors: true
+
+  getFolders:
+    handler: folder/get-folders.list
+    events:
+      - http:
+          path: folder
+          method: get
+          cors: true
+
+  updateFolder:
+    handler: folder/update-folder.update
+    events:
+      - http:
+          path: folder
+          method: put
+          cors: true
+
+  createBookmark:
+    handler: bookmark/create-bookmark.create
+    events:
+      - http:
+          path: bookmark
+          method: post
+          cors: true
+
+  deleteBookmark:
+    handler: bookmark/delete-bookmark.delete
+    events:
+      - http:
+          path: bookmark/{id}
+          method: delete
+          cors: true
+
+  updateBookmark:
+    handler: bookmark/update-bookmark.update
+    events:
+      - http:
+          path: bookmark
+          method: put
+          cors: true
+
+resources:
+  Resources:
+    DynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: user_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
